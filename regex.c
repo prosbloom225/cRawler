@@ -1,6 +1,8 @@
 #include "debug.h"
 #include <stdlib.h>
 #include <regex.h>
+#include "redisconnector.h"
+
 
 int getproducts(size_t size, char *data) {
 	regex_t regex;

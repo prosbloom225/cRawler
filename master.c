@@ -39,6 +39,11 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 }
 
 int main(int argc, char **argv) {
+	// init redis connection
+	int rc;
+	rc = connect_to_redis("127.0.0.1", 6379);
+	log_info("Redis connection OK!");
+
 	if (argc == 0) {
 		return 0;
 	}

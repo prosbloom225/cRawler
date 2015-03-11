@@ -1,0 +1,27 @@
+Puma 2.3.2 starting...
+* Min threads: 0, max threads: 16
+* Environment: development
+* Listening on tcp://0.0.0.0:63790
+== Sinatra/1.3.6 has taken the stage on 63790 for production with backup from Puma
+┌────────────────────────┬────────────────┐
+│                        │ 127.0.0.1:6379 │
+├────────────────────────┼────────────────┤
+│          redis_version │         2.8.13 │
+│             redis_mode │     standalone │
+│             process_id │          17537 │
+│      uptime_in_seconds │          15717 │
+│         uptime_in_days │              0 │
+│                   role │         master │
+│       connected_slaves │              0 │
+│            aof_enabled │              0 │
+│ rdb_bgsave_in_progress │              0 │
+│     rdb_last_save_time │     1426110160 │
+└────────────────────────┴────────────────┘
+
+┌────────┬──┬──┬──┬───┬─────┬──────┬────┬─────┬─────┬─────┬──────┬─────┬─────┬─────┐
+     time us sy cl bcl   mem    rss keys cmd/s exp/s evt/s hit%/s hit/s mis/s aofcs 
+├────────┼──┼──┼──┼───┼─────┼──────┼────┼─────┼─────┼─────┼──────┼─────┼─────┼─────┤
+ 16:45:29  -  -  1   0 492kB 2.42MB    1     -     -     -      -     -     -    0B 
+Interrupted.
+* Gracefully stopping, waiting for requests to finish
+* Goodbye!

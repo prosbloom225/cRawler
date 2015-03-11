@@ -1,6 +1,13 @@
 #include "debug.h"
 #include <stdlib.h>
+#include <string.h>
 #include <regex.h>
+#include "redisconnector.h"
+
+struct keyvalue {
+	char* key;
+	char* value;
+};
 
 static int compile_regex(regex_t *r, const char *regex_text) {
 	int status = regcomp(r, regex_text, REG_EXTENDED|REG_NEWLINE);
@@ -11,6 +18,8 @@ static int compile_regex(regex_t *r, const char *regex_text) {
 		return 1;
 	}
 	log_info("Regex compiled!");
+
+
 	return 0;
 }
 
@@ -32,6 +41,7 @@ int getproducts(size_t size, char *data) {
 	const char *p = data;
 	const int n_matches = 256;
 	regmatch_t m[n_matches];
+	int count = 0;
 	while (1) {
 		int i=0;
 		int nomatch = regexec(&regex, p, n_matches, m, 0);
@@ -53,7 +63,11 @@ int getproducts(size_t size, char *data) {
 				//printf("$%d is", i);
 			}
 			//printf("'%.*s' (bytes %d:%d)\n", (finish-start), data+start, start, finish);
+			count++;
 			log_info("PRD: %.*s", (finish-start),data+start);
+			char substring[256];
+			memcpy(substring, &data[start], (finish-start));
+			set_key(substring, "catalog.jsp");
 		}
 		p += m[0].rm_eo;
 	}

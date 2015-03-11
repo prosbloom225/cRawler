@@ -1,7 +1,7 @@
 CC=clang
-CFLAGS=-I. -Wall  -std=c11 -D_BSD_SOURCE -Wno-unused-variable -fcolor-diagnostics -g  -lcurl
-DEPS = regexlib.h
-OBJ = master.o regexlib.o
+CFLAGS=-I. -Wall  -std=c11 -D_BSD_SOURCE -Wno-unused-variable -fcolor-diagnostics -g -lcurl -lhiredis
+DEPS = regexlib.h -redisconnector.h
+OBJ = master.o regexlib.o redisconnector.o
 
 %.o: %.c $(DEPS)
 	        $(CC) $(CFLAGS) -c -o $@ $<
