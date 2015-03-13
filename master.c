@@ -18,6 +18,12 @@
 #include "debug.h"
 #include "regexlib.h"
 
+#define URL "www.kohls.com/catalog.jsp"
+
+struct keyvalue {
+	char* key;
+	char* value;
+};
 struct MemoryStruct {
 	char *memory;
 	size_t size;
@@ -27,9 +33,9 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 	struct MemoryStruct *mem = (struct MemoryStruct *) userp;
 	mem->memory = realloc(mem->memory, mem->size + realsize + 1);
 	if (mem->memory ==NULL) {
-	// out of memory
-	log_err("Out of memory!");
-	return 0;
+		// out of memory
+		log_err("Out of memory!");
+		return 0;
 	}
 	memcpy(&(mem->memory[mem->size]), contents, realsize);
 	mem->size += realsize;
@@ -44,8 +50,11 @@ int main(int argc, char **argv) {
 	rc = connect_to_redis("127.0.0.1", 6379);
 	log_info("Redis connection OK!");
 
-	if (argc == 0) {
-		return 0;
+	char *url;
+	if (argc <=1)  {
+		url = URL;
+	} else {
+		url = argv[1];
 	}
 	pid_t pid;
 
@@ -57,7 +66,7 @@ int main(int argc, char **argv) {
 	chunk.size = 0;
 	curl_global_init(CURL_GLOBAL_ALL);
 	curl_handle = curl_easy_init();
-	curl_easy_setopt(curl_handle, CURLOPT_URL, argv[1]);
+	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "firefox");
@@ -66,19 +75,31 @@ int main(int argc, char **argv) {
 
 	if (res != CURLE_OK) {
 		log_err("curl_easy_perform failed: %s", curl_easy_strerror(res));
+		log_err("URL: %s", url);
+		log_err("DEFAULT: %s", URL);
 	} else {
 		// We got data, process
 		log_info("Curl: %lu bytes retrieved", (long)chunk.size);
 		//log_info("%s\n", chunk.memory);
 		// Get the products
 		getproducts(chunk.size, chunk.memory);
-		
+
 	}
 	curl_easy_cleanup(curl_handle);
 	if (chunk.memory)
 		free(chunk.memory);
 	curl_global_cleanup();
 
+	int s = get_dbsize();
+	log_info("DB Size: %i", s);
+	for (int i=0; i< s; i++) {
+		struct keyvalue k = pop_random_key();
+		log_info("KEY: %s", k.key);
+		log_info("VAL: %s", k.value);
+	}
+
+	// Clean up
+	close_redis();
 	log_info("Master complete");
 	return 0;
 }

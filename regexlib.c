@@ -1,8 +1,23 @@
+/****************************************************************************** 
+ * 
+ * Description:	Regex lib for cRawler
+ *
+ * Version:	1.0
+ * Revision: 	1.0
+ * Created:	2015-03-11 Wed 16:27 PM
+ * Compiler: 	clang --std=c11
+ *
+ * Author:	michael.osiecki
+ * Org: 	kohls
+ *
+ ******************************************************************************/
 #include "debug.h"
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
 #include "redisconnector.h"
+
+#define DEBUG 1
 
 struct keyvalue {
 	char* key;
@@ -41,7 +56,6 @@ int getproducts(size_t size, char *data) {
 	const char *p = data;
 	const int n_matches = 256;
 	regmatch_t m[n_matches];
-	int count = 0;
 	while (1) {
 		int i=0;
 		int nomatch = regexec(&regex, p, n_matches, m, 0);
@@ -63,11 +77,20 @@ int getproducts(size_t size, char *data) {
 				//printf("$%d is", i);
 			}
 			//printf("'%.*s' (bytes %d:%d)\n", (finish-start), data+start, start, finish);
-			count++;
-			log_info("PRD: %.*s", (finish-start),data+start);
-			char substring[256];
+#ifdef DEBUG
+			/* log_info("START: %i", start); */
+			/* log_info("FINSH: %i", finish); */
+			/* log_info("SFIN : %c", data[finish]); */
+#endif
+			char substring[finish-start];
 			memcpy(substring, &data[start], (finish-start));
+			// Terminate the char* as a string
+			substring[finish-start] = '\0';
 			set_key(substring, "catalog.jsp");
+#ifdef DEBUG
+			log_info("PRD: %.*s", (finish-start),data+start);
+			log_info("SENT: %s", substring);
+#endif
 		}
 		p += m[0].rm_eo;
 	}

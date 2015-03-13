@@ -13,6 +13,7 @@
 int create_tcp_socket();
 char *get_ip(char *host);
 char *build_get_query(char *host, char *page);
-char *getpage(char *host, char *page);
+int getpage(char *url);
+int process_page(char* text, int size, char *url);
 
 #endif
