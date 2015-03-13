@@ -17,7 +17,8 @@
 #include <regex.h>
 #include "redisconnector.h"
 
-#define DEBUG 1
+//#define DEBUG 1
+static regex_t regex;
 
 struct keyvalue {
 	char* key;
@@ -37,9 +38,12 @@ static int compile_regex(regex_t *r, const char *regex_text) {
 
 	return 0;
 }
+void free_regex() {
+	regfree(&regex);
+}
 
 int getproducts(size_t size, char *data) {
-	regex_t regex;
+	//regex_t regex;
 	int reti;
 	char msg[256];
 
@@ -96,3 +100,4 @@ int getproducts(size_t size, char *data) {
 	}
 	return 0;
 }
+

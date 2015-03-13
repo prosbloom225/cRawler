@@ -1,6 +1,8 @@
 /****************************************************************************** 
  * 
  * Description:	Master Crawler Control
+ * 		Controls spinning up the slavedriver and handles crawling of
+ * 		catalog.jsp pages
  *
  * Version:	1.0
  * Revision: 	1.0
@@ -14,9 +16,11 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <curl/curl.h>
+#include <unistd.h>
 #include "crawler.h"
 #include "debug.h"
 #include "regexlib.h"
+#include "slavedriver.h"
 
 #define URL "www.kohls.com/catalog.jsp"
 
@@ -45,9 +49,10 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 }
 
 int main(int argc, char **argv) {
+
 	// init redis connection
 	int rc;
-	rc = connect_to_redis("127.0.0.1", 6379);
+	rc = connect_to_redis(NULL,0);
 	log_info("Redis connection OK!");
 
 	char *url;
@@ -56,7 +61,6 @@ int main(int argc, char **argv) {
 	} else {
 		url = argv[1];
 	}
-	pid_t pid;
 
 
 	CURL *curl_handle;
@@ -92,14 +96,22 @@ int main(int argc, char **argv) {
 
 	int s = get_dbsize();
 	log_info("DB Size: %i", s);
-	for (int i=0; i< s; i++) {
-		struct keyvalue k = pop_random_key();
-		log_info("KEY: %s", k.key);
-		log_info("VAL: %s", k.value);
-	}
+	/* for (int i=0; i< s; i++) { */
+	/* 	struct keyvalue k = pop_random_key(); */
+	/* 	log_info("KEY: %s", k.key); */
+	/* 	log_info("VAL: %s", k.value); */
+	/* 	free(k.key); */
+	/* 	free(k.value); */
+	/* } */
+
+	// Start up the slavedriver
+	init_slavedriver();
+	sleep(3);
 
 	// Clean up
+	free_regex();
 	close_redis();
 	log_info("Master complete");
 	return 0;
 }
+

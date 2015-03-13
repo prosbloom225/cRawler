@@ -14,17 +14,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <curl/curl.h>
+#include <pthread.h>
 #include "debug.h"
+#include "redisconnector.h"
+#include "crawler.h"
 
-
+#define DEBUG 1
 #define HOST "www.kohls.com"
 #define PAGE "/"
 #define PORT 80
 #define USERAGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115"
+#define REDIS_SERVER "127.0.0.1"
+#define REDIS_PORT 6379
 
+struct keyvalue{
+	char* key;
+	char* value;
+};
 
-int process_page(char* text, int size, char *url);
 struct MemoryStruct {
 	char *memory;
 	size_t size;
@@ -86,13 +95,29 @@ int process_page(char* text, int size, char *url) {
 	return 0;
 }
 
-
 int main (int argc, char **argv) {
 	log_info("Worker initialized");
 	if (argc != 0) {
 		getpage(argv[1]);
 	}
+	worker_loop();
 	return 0;
 }
 
-
+void *worker_loop() {
+	pthread_t id = pthread_self();
+	log_info("Starting worker loop for thread: %lu", (long)id);
+	connect_to_redis(NULL,0);
+	while (1) {
+		log_info("Working...");
+		struct keyvalue k = pop_random_key();
+		log_info("KEY: %s", k.key);
+		log_info("VAL: %s", k.value);
+		sleep(1);
+	}
+#ifdef DEBUG
+	log_info("Worker complete.  Closing up shop.");
+#endif
+	close_redis();
+	return NULL;
+}

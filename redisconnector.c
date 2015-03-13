@@ -1,6 +1,8 @@
 /****************************************************************************** 
  * 
  * Description:	Redis connector for cRawler	
+ * 		Provides an api for interacting with redis.  Returns key_value
+ * 		pairs.
  *
  * Version:	1.0
  * Revision: 	1.0
@@ -17,8 +19,8 @@
 #include <stdio.h>
 #include "debug.h"
 
-#define DEBUG 1
-#define IP 127.0.0.1
+//#define DEBUG 1
+#define IP "127.0.0.1"
 #define PORT 6379
 #define REDISTIMEOUT 500000
 static redisContext *c;
@@ -29,6 +31,10 @@ struct keyvalue{
 };
 
 int connect_to_redis(char *ip, int port) {
+	if (ip == NULL)
+		ip = IP;
+	if (port == 0) 
+		port = PORT;
 	//struct timeval timeout = {1, REDISTIMEOUT};
 	c = redisConnect(ip, port);
 	if (c != NULL && c->err) {
@@ -62,7 +68,9 @@ int set_key(char *key, char *value) {
 	return 0;
 }
 char *get_value(char *key) {
+#ifdef DEBUG
 	log_info("Getting value for key: %s", key);
+#endif
 	redisReply *reply;
 
 	reply = redisCommand(c, "GET %s", key);
@@ -77,8 +85,8 @@ char *get_value(char *key) {
 	}
 	// alloc the reply value
 	char *ret;
-	ret = malloc(reply->len);
-	memcpy(ret, reply->str, reply->len);
+	ret = malloc(reply->len+1);
+	memcpy(ret, reply->str, reply->len+1);
 #ifdef DEBUG
 	log_err("RET: %s", ret);
 	log_err("SIZE: %lu", (long)reply->len);
@@ -90,30 +98,34 @@ char *get_value(char *key) {
 int del_key(char *key) {
 	redisReply *reply;
 	reply = redisCommand(c, "DEL %s ", key);
+#ifdef DEBUG
 	log_info("Deleted key: %s", key);
+#endif
+	int ret = reply->integer;
 	freeReplyObject(reply);
-	return reply->integer;
+	return ret;
 }
 
 struct keyvalue get_random_key() {
+#ifdef DEBUG
 	log_info("Returning random key");
+#endif
 	redisReply *reply;
 	reply = redisCommand(c, "RANDOMKEY");
-	log_info("Got random key");
 #ifdef DEBUG
+	log_info("Got random key");
 	print_reply(reply);
 #endif
 
 	// alloc the key
-	char key[reply->len];
-	//*key = calloc(0,reply->len);
+	char *key;
+	key = malloc(reply->len+1);
 	memcpy(key, reply->str, reply->len+1);
-	log_info("KEY: %s\n", key);
-	log_info("KEY: %s\n", reply->str);
 
 	// get the val
 	char *val = get_value(key);
 #ifdef DEBUG
+	log_info("After get_value");
 	log_info("KEY: %s", key);
 	log_info("VAL: %s", val);
 #endif
@@ -126,15 +138,21 @@ struct keyvalue get_random_key() {
 	log_info("Freeing get_random_key reply");
 #endif
 	freeReplyObject(reply);
+#ifdef DEBUG
+	log_info("Returning struct: ");
+	log_info("KEY: %s", ret.key);
+	log_info("VAL: %s", ret.value);
+#endif
 	return ret;
 }
 
 struct keyvalue pop_random_key() { 
 	struct keyvalue ret = get_random_key();
+#ifdef DEBUG
 	log_info("POPKEY %s", ret.key);
 	log_info("POPVAL %s", ret.value);
-	//del_key(ret.key);
-	log_info("Returning obj");
+#endif
+	del_key(ret.key);
 	return ret;
 }
 
@@ -146,4 +164,3 @@ int get_dbsize() {
 	freeReplyObject(reply);
 	return ret;
 }
-
