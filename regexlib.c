@@ -18,7 +18,7 @@
 #include "redisconnector.h"
 
 //#define DEBUG 1
-static regex_t regex;
+static regex_t catalog_regex;
 
 struct keyvalue {
 	char* key;
@@ -39,7 +39,7 @@ static int compile_regex(regex_t *r, const char *regex_text) {
 	return 0;
 }
 void free_regex() {
-	regfree(&regex);
+	regfree(&catalog_regex);
 }
 
 int getproducts(size_t size, char *data) {
@@ -55,14 +55,14 @@ int getproducts(size_t size, char *data) {
 
 	char *regex_text= "/product/prd-.*\\.jsp";
 	log_info("Compiling regex: %s", regex_text);
-	compile_regex(&regex, regex_text);
+	compile_regex(&catalog_regex, regex_text);
 
 	const char *p = data;
 	const int n_matches = 256;
 	regmatch_t m[n_matches];
 	while (1) {
 		int i=0;
-		int nomatch = regexec(&regex, p, n_matches, m, 0);
+		int nomatch = regexec(&catalog_regex, p, n_matches, m, 0);
 		if (nomatch) {
 			log_info("No more matches");
 			return nomatch;

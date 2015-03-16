@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include "debug.h"
 
-#define DEBUG 1
+//#define DEBUG 1
 #define IP "127.0.0.1"
 #define PORT 6379
 #define REDISTIMEOUT 500000
@@ -111,6 +111,8 @@ int del_key(char *key) {
 
 struct keyvalue get_random_key() {
 	struct keyvalue ret;
+	ret.key = 0;
+	ret.value = 0;
 #ifdef DEBUG
 	log_info("Returning random key");
 #endif
@@ -121,8 +123,10 @@ struct keyvalue get_random_key() {
 	print_reply(reply);
 #endif
 
-	if (reply->len == 0)
+	if (reply->len == 0) {
+		freeReplyObject(reply);
 		return ret;
+	}
 	// alloc the key
 	char *key;
 	key = malloc(reply->len+1);
@@ -152,12 +156,19 @@ struct keyvalue get_random_key() {
 }
 
 struct keyvalue pop_random_key() { 
-	struct keyvalue ret = get_random_key();
+	struct keyvalue ret;
+	ret = get_random_key();
 #ifdef DEBUG
 	log_info("POPKEY %s", ret.key);
 	log_info("POPVAL %s", ret.value);
 #endif
+	if (ret.key != 0) {
 	del_key(ret.key);
+	}  else {
+		log_info("Returning NULL keyvale");
+		ret.key = 0;
+		ret.value = 0;
+	}
 	return ret;
 }
 
