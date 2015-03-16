@@ -28,7 +28,7 @@
 
 #define DEBUG 1
 #define URL "www.kohls.com/catalog.jsp?N=0&WS="
-#define MAXPRDPAGES 1000
+#define MAXPRDPAGES 30000
 
 
 struct keyvalue {
@@ -55,6 +55,17 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 	return realsize;
 }
 
+void allocate_2darray(char ***source, int number_of_slots, int length_of_each_slot)
+{
+   int i = 0;
+   source = malloc(sizeof(char *) * number_of_slots);
+   if(source == NULL) { perror("Memory full!"); exit(EXIT_FAILURE);}
+   for(i = 0; i < number_of_slots; i++){
+         source[i] = malloc(sizeof(char) * length_of_each_slot);
+         if(source[i] == NULL) { perror("Memory full!"); exit(EXIT_FAILURE);}
+      }
+} 
+
 int main(int argc, char **argv) {
 	struct timespec sleep_time;
 	sleep_time.tv_sec=1;
@@ -75,13 +86,14 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
 	log_info("Building catalog page database");
 #endif
-	char catalogDB[MAXPRDPAGES][256];
+	char **catalogDB;//[MAXPRDPAGES][256];
+	allocate_2darray(&catalogDB, MAXPRDPAGES, 256);
 	int currCount=0;
 	// build database of catalog0 pages
 	for (int i=0;i < (MAXPRDPAGES/96); i++){
-		int s = i*96;
+		long s = i*96;
 		char  c[20];
-		sprintf(c, "%d", s);
+		sprintf(c, "%lu", s);
 
 		char currPage[60];
 		snprintf(currPage, sizeof currPage, "%s%s" , URL, c);
@@ -121,7 +133,7 @@ int main(int argc, char **argv) {
 		curl_easy_setopt(curl_handle, CURLOPT_URL, catalogDB[i]);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "firefox");
+		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "hurr durr im a sheep");
 		// Exec!
 		res =  curl_easy_perform(curl_handle);
 

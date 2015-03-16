@@ -23,7 +23,6 @@
 
 #define DEBUG 1
 #define HOST "www.kohls.com"
-#define PAGE "/"
 #define PORT 80
 #define USERAGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115"
 #define REDIS_SERVER "127.0.0.1"
@@ -56,6 +55,13 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 }
 
 int getpage(char *url) {
+	// Build URL
+	char buf[256];
+	snprintf(buf, sizeof buf, "%s%s", HOST, url);
+	url = buf;
+#ifdef DEBUG
+	log_info("Curling for url: %s", url);
+#endif
 
 	CURL *curl_handle;
 	CURLcode res;
@@ -67,7 +73,7 @@ int getpage(char *url) {
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "firefox");
+	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "hurr durr im a sheep");
 	// Exec!
 	res =  curl_easy_perform(curl_handle);
 
@@ -75,20 +81,23 @@ int getpage(char *url) {
 		log_err("curl_easy_perform failed: %s", curl_easy_strerror(res));
 	} else {
 		// We got data, process
+#ifdef DEBUG
 		log_info("Curl: %lu bytes retrieved", (long)chunk.size);
-		log_info("test");
+#endif
 		process_page(chunk.memory, chunk.size, url);
 	}
 	curl_easy_cleanup(curl_handle);
 	if (chunk.memory)
 		free(chunk.memory);
 	curl_global_cleanup();
-	log_info("Crawler thread complete");
+	log_info("getpage complete");
 	return 0;
 }
 
 int process_page(char* text, int size, char *url) {
+#ifdef DEBUG
 	log_info("Processing page: %s", url);
+#endif 
 	if (size != 0) {
 		text = NULL;
 	}
@@ -114,9 +123,11 @@ void *worker_loop() {
 		if (k.key != 0) {
 		log_info("KEY: %s", k.key);
 		log_info("VAL: %s", k.value);
+		getpage(k.key);
 		} else {
 			log_info("NO KEY RETURNED");
 		}
+		// TODO - Remove this sleep, the processing of the page and http wait time should be enough sleep
 		sleep(1);
 	}
 #ifdef DEBUG
