@@ -23,6 +23,7 @@
 #include "slavedriver.h"
 
 #define URL "www.kohls.com/catalog.jsp"
+#define MAXPRDPAGES 300
 
 struct keyvalue {
 	char* key;
@@ -62,6 +63,25 @@ int main(int argc, char **argv) {
 		url = argv[1];
 	}
 
+	char *catalogDB;
+	// build database of catalog0 pages
+	for (int i=0;i < MAXPRDPAGES; i*=96){
+		char  c[20];
+		sprintf(c, "%d", i);
+		log_err("%d", i);
+		char *currPage = "http://www.kohls.com/catalog.jsp?N=0&WS=";
+		currPage = malloc(sizeof(currPage) + sizeof(c));
+		snprintf(currPage, sizeof currPage, "%s", c);
+		//log_err("%s", currPage);
+		catalogDB = malloc(sizeof(currPage));
+	}
+	return 0;
+
+	// // BEGIN THE MAIN LOOP
+	
+
+
+	// curl the page
 
 	CURL *curl_handle;
 	CURLcode res;

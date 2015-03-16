@@ -111,8 +111,12 @@ void *worker_loop() {
 	while (1) {
 		log_info("Working...");
 		struct keyvalue k = pop_random_key();
+		if (k.key != NULL) {
 		log_info("KEY: %s", k.key);
 		log_info("VAL: %s", k.value);
+		} else {
+			log_info("NO KEY RETURNED");
+		}
 		sleep(1);
 	}
 #ifdef DEBUG

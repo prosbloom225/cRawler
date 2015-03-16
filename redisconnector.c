@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include "debug.h"
 
-//#define DEBUG 1
+#define DEBUG 1
 #define IP "127.0.0.1"
 #define PORT 6379
 #define REDISTIMEOUT 500000
@@ -96,6 +96,9 @@ char *get_value(char *key) {
 	return ret;
 }
 int del_key(char *key) {
+	if (key == NULL) {
+		return -1;
+	}
 	redisReply *reply;
 	reply = redisCommand(c, "DEL %s ", key);
 #ifdef DEBUG
@@ -107,6 +110,7 @@ int del_key(char *key) {
 }
 
 struct keyvalue get_random_key() {
+	struct keyvalue ret;
 #ifdef DEBUG
 	log_info("Returning random key");
 #endif
@@ -117,6 +121,8 @@ struct keyvalue get_random_key() {
 	print_reply(reply);
 #endif
 
+	if (reply->len == 0)
+		return ret;
 	// alloc the key
 	char *key;
 	key = malloc(reply->len+1);
@@ -131,7 +137,6 @@ struct keyvalue get_random_key() {
 #endif
 
 	// build return obj
-	struct keyvalue ret;
 	ret.key = key;
 	ret.value = val;
 #ifdef DEBUG
