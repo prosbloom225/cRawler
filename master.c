@@ -57,7 +57,7 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 
 int main(int argc, char **argv) {
 	struct timespec sleep_time;
-	sleep_time.tv_sec=1;
+	sleep_time.tv_sec=0;
 	sleep_time.tv_nsec = 500000000L;
 	
 	char *url;
@@ -148,15 +148,17 @@ int main(int argc, char **argv) {
 		int s = get_dbsize();
 		log_info("DB Size: %i", s);
 		
-		// Wait until we dont have data, then cycle back
-		while (s !=0) {
+		// Wait until we have less data, then cycle back
+		do {
 			//sleep(1);
 			nanosleep(&sleep_time, NULL);
 			s = get_dbsize();
 #ifdef DEBUG
 		log_info("DB Size: %i", s);
 #endif
-		}
+		if (s <= 100) 
+			break;
+		} while (s <= 96) ;
 	}
 
 
