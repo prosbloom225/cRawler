@@ -31,6 +31,8 @@
 #define MAXPRDPAGES 200000
 
 
+static int min_page=0;
+static int max_page;
 struct keyvalue {
 	char* key;
 	char* value;
@@ -55,16 +57,29 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 	return realsize;
 }
 
+void process_args(int argc, char **argv) {
+#ifdef DEBUG
+	log_info("Setting start/end page");
+	log_info("Start: %d", atoi(argv[1]));
+	log_info("End  : %d", atoi(argv[2]));
+#endif
+	if (argc == 3) {
+	min_page = atoi(argv[1]);
+	max_page = atoi(argv[2]);
+	}
+	log_info("%d", max_page);
+}
+
 int main(int argc, char **argv) {
 	struct timespec sleep_time;
 	sleep_time.tv_sec=0;
 	sleep_time.tv_nsec = 500000000L;
+	max_page = MAXPRDPAGES;
 	
-	char *url;
+	char *url = URL;
 	if (argc > 1) {
-		url = argv[1];
+		process_args(argc, argv);
 	} else {
-		url = URL;
 	}
 
 	// init redis connection
@@ -75,17 +90,16 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
 	log_info("Building catalog page database");
 #endif
-	char *data = malloc(sizeof(*data) * 255 ); // *MAXPRDPAGES
-	char **catalogDB = malloc(sizeof(char *) * MAXPRDPAGES);
-	for (int i = 0;i < MAXPRDPAGES; ++i) {
-		//catalogDB[i] = &data[i * MAXPRDPAGES];
+	char *data = malloc(sizeof(*data) * 255 ); 
+	char **catalogDB = malloc(sizeof(char *) * max_page);
+	for (int i = 0;i < max_page; ++i) {
 		catalogDB[i] = malloc(sizeof(char *) * 255);
 	}
 
 	long i;
 	// build database of catalog0 pages
-	for (i=0;i < (MAXPRDPAGES/96); i++){
-		long s = i*96;
+	for (i=0;i < (max_page/96); i++){
+		long s = i*96 + (min_page - min_page%96);
 		char  c[40];
 		sprintf(c, "%lu", s);
 
@@ -99,14 +113,9 @@ int main(int argc, char **argv) {
 #endif
 
 
-
-	// Start up the slavedriver
-	init_slavedriver();
-	sleep(3);
-
 	// // BEGIN THE MAIN LOOP
 
-	for (int i=0;i < (MAXPRDPAGES/96); i++){
+	for (int i=0;i < (max_page/96); i++){
 #ifdef DEBUG
 		log_info("Beginning curl for: %s", catalogDB[i]);
 #endif
@@ -149,16 +158,14 @@ int main(int argc, char **argv) {
 		log_info("DB Size: %i", s);
 		
 		// Wait until we have less data, then cycle back
-		do {
+		while (s >= 192){
 			//sleep(1);
 			nanosleep(&sleep_time, NULL);
 			s = get_dbsize();
 #ifdef DEBUG
 		log_info("DB Size: %i", s);
 #endif
-		if (s <= 100) 
-			break;
-		} while (s <= 96) ;
+		} 
 	}
 
 

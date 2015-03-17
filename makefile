@@ -12,7 +12,7 @@ master: $(OBJ)
 worker: redisconnector.o 
 	        $(CC) $(CFLAGS) crawler.c -o $@ $^
 clean:
-	rm -rf *.o crawler master worker
+	rm -rf *.o crawler master worker *.out
 install:
 	echo "Test application, no install."
 
