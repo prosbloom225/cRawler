@@ -28,7 +28,7 @@
 
 #define DEBUG 1
 #define URL "www.kohls.com/catalog.jsp?N=0&WS="
-#define MAXPRDPAGES 30000
+#define MAXPRDPAGES 200000
 
 
 struct keyvalue {
@@ -55,17 +55,6 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 	return realsize;
 }
 
-void allocate_2darray(char ***source, int number_of_slots, int length_of_each_slot)
-{
-   int i = 0;
-   source = malloc(sizeof(char *) * number_of_slots);
-   if(source == NULL) { perror("Memory full!"); exit(EXIT_FAILURE);}
-   for(i = 0; i < number_of_slots; i++){
-         source[i] = malloc(sizeof(char) * length_of_each_slot);
-         if(source[i] == NULL) { perror("Memory full!"); exit(EXIT_FAILURE);}
-      }
-} 
-
 int main(int argc, char **argv) {
 	struct timespec sleep_time;
 	sleep_time.tv_sec=1;
@@ -86,30 +75,30 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
 	log_info("Building catalog page database");
 #endif
-	char **catalogDB;//[MAXPRDPAGES][256];
-	allocate_2darray(&catalogDB, MAXPRDPAGES, 256);
-	int currCount=0;
+	char *data = malloc(sizeof(*data) * 255 ); // *MAXPRDPAGES
+	char **catalogDB = malloc(sizeof(char *) * MAXPRDPAGES);
+	for (int i = 0;i < MAXPRDPAGES; ++i) {
+		//catalogDB[i] = &data[i * MAXPRDPAGES];
+		catalogDB[i] = malloc(sizeof(char *) * 255);
+	}
+
+	long i;
 	// build database of catalog0 pages
-	for (int i=0;i < (MAXPRDPAGES/96); i++){
+	for (i=0;i < (MAXPRDPAGES/96); i++){
 		long s = i*96;
-		char  c[20];
+		char  c[40];
 		sprintf(c, "%lu", s);
 
-		char currPage[60];
+		char currPage[80];
 		snprintf(currPage, sizeof currPage, "%s%s" , URL, c);
-#ifdef DEBUG
-		log_info("%d: %s",i , currPage);
-#endif
 		memcpy(catalogDB[i], currPage, sizeof(currPage));
 	}
-
-
 #ifdef DEBUG
-	log_info("Printing catalog database");
-	for (int i=0;i < (MAXPRDPAGES/96); i++){
-		log_info("%d: %s",i, catalogDB[i]);
-	}
+		log_info("CatalogDB built! %lu pages queued",  i);
+		log_info("Last page: %s", catalogDB[i-1]);
 #endif
+
+
 
 	// Start up the slavedriver
 	init_slavedriver();

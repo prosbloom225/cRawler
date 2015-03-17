@@ -54,20 +54,24 @@ int getproducts(size_t size, char *data) {
 	log_info("Size of data: %lu", (long)size);
 
 	char *regex_text= "/product/prd-.*\\.jsp";
+	if (catalog_regex.__allocated == 0) {
 	log_info("Compiling regex: %s", regex_text);
 	compile_regex(&catalog_regex, regex_text);
+	}
 
 	const char *p = data;
 	const int n_matches = 256;
 	regmatch_t m[n_matches];
+	int count = 0;
 	while (1) {
 		int i=0;
 		int nomatch = regexec(&catalog_regex, p, n_matches, m, 0);
 		if (nomatch) {
-			log_info("No more matches");
+			log_info("Regex complete with %d matches", count);
 			return nomatch;
 		}
 		for (i=0;i < n_matches;i++) {
+			count++;
 			int start;
 			int finish;
 			if (m[i].rm_so == -1) {
