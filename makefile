@@ -9,7 +9,7 @@ all: master worker
 	        $(CC) $(CFLAGS) -c -o $@ $<
 master: $(OBJ)
 	        $(CC) $(CFLAGS) -o $@ $^
-worker: redisconnector.o 
+worker: redisconnector.o  regexlib.o
 	        $(CC) $(CFLAGS) crawler.c -o $@ $^
 clean:
 	rm -rf *.o crawler master worker *.out

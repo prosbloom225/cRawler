@@ -26,7 +26,7 @@
 #include "slavedriver.h"
 
 
-#define DEBUG 1
+//#define DEBUG 1
 #define URL "www.kohls.com/catalog.jsp?N=0&WS="
 #define MAXPRDPAGES 200000
 
@@ -116,9 +116,7 @@ int main(int argc, char **argv) {
 	// // BEGIN THE MAIN LOOP
 
 	for (int i=0;i < (max_page/96); i++){
-#ifdef DEBUG
 		log_info("Beginning curl for: %s", catalogDB[i]);
-#endif
 
 		// curl the page
 		CURL *curl_handle;

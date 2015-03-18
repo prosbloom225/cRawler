@@ -17,11 +17,12 @@
 #include <unistd.h>
 #include <curl/curl.h>
 #include <pthread.h>
+#include "regexlib.h"
 #include "debug.h"
 #include "redisconnector.h"
 #include "crawler.h"
 
-#define DEBUG 1
+//#define DEBUG 1
 #define HOST "www.kohls.com"
 #define PORT 80
 #define USERAGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115"
@@ -99,8 +100,10 @@ int process_page(char* text, int size, char *url) {
 #ifdef DEBUG
 	log_info("Processing page: %s", url);
 #endif 
-	if (size != 0) {
+	if (size == 0) {
 		text = NULL;
+	} else {
+		getimages(size, text, url);
 	}
 	return 0;
 }
@@ -128,7 +131,9 @@ void process_args(int argc, char **argv) {
 }
 
 int main (int argc, char **argv) {
+#ifdef DEBUG
 	log_info("Worker initialized");
+#endif
 	process_args(argc, argv);
 	worker_loop();
 	return 0;
@@ -138,18 +143,28 @@ void *worker_loop() {
 	pthread_t id = pthread_self();
 	log_info("Starting worker loop for thread: %lu", (long)id);
 	connect_to_redis(redis_server_ip,redis_server_port);
+	connect_to_redis2(redis_server_ip,redis_server_port+1);
 	while (1) {
 		log_info("Working...");
 		struct keyvalue k = pop_random_key();
 		if (k.key != 0) {
 		log_info("KEY: %s", k.key);
 		log_info("VAL: %s", k.value);
+		if (1) {
+			// Process page
 		getpage(k.key);
+		// We're done with the page, push to pagesVisited;
+		set_key2(k.key, k.value);
+		} else {
+			// Process images
+		}
 		} else {
 			log_info("NO KEY RETURNED");
 		}
+		
 		// TODO - Remove this sleep, the processing of the page and http wait time should be enough sleep
 		sleep(1);
+		//break;
 	}
 #ifdef DEBUG
 	log_info("Worker complete.  Closing up shop.");

@@ -23,7 +23,10 @@
 #define IP "127.0.0.1"
 #define PORT 6379
 #define REDISTIMEOUT 500000
+// PagesToVisit
 static redisContext *c;
+// PagesVisited
+static redisContext *d;
 
 struct keyvalue{
 	char* key;
@@ -44,10 +47,14 @@ int connect_to_redis(char *ip, int port) {
 		log_err("Error making redis connectinon: %s", c->errstr);
 		exit(EXIT_FAILURE);
 	}
+#ifdef DEBUG
 	log_info("Redis connection made!");
+#endif 
 	redisReply *reply;
 	reply = redisCommand(c, "PING");
+#ifdef DEBUG
 	log_info("Ping-> %s", reply->str);
+#endif
 	freeReplyObject(reply);
 	return 0;
 }
@@ -167,7 +174,7 @@ struct keyvalue pop_random_key() {
 	log_info("POPVAL %s", ret.value);
 #endif
 	if (ret.key != 0) {
-	del_key(ret.key);
+		del_key(ret.key);
 	}  else {
 		log_info("Returning NULL keyvale");
 		ret.key = 0;
@@ -183,4 +190,56 @@ int get_dbsize() {
 	ret = reply->integer;
 	freeReplyObject(reply);
 	return ret;
+}
+
+
+int connect_to_redis2(char *ip, int port) {
+#ifdef DEBUG
+	log_info("Opening redis connction to server: %s:%d", ip, port);
+#endif
+	if (ip == NULL)
+		ip = IP;
+	if (port == 0) 
+		port = PORT;
+	//struct timeval timeout = {1, REDISTIMEOUT};
+	d = redisConnect(ip, port);
+	if (d != NULL && d->err) {
+		log_err("Error making redis connectinon: %s", c->errstr);
+		exit(EXIT_FAILURE);
+	} else {
+		return 0;
+	}
+	return -1;
+}
+int set_key2(char *key, char *value) {
+	redisReply *reply;
+	reply = redisCommand(d, "SET %s %s", key, value);
+#ifdef DEBUG
+	log_info("SET: %s, %s", key, value);
+	print_reply(reply);
+#endif
+	freeReplyObject(reply);
+	return 0;
+}
+
+int flushall() {
+	redisReply *reply;
+	reply = redisCommand(c, "FLUSHALL");
+#ifdef DEBUG
+	log_info("FLUSHING REDIS");
+	print_reply(reply);
+#endif
+	freeReplyObject(reply);
+	return 0;
+}
+
+int flushall2() {
+	redisReply *reply;
+	reply = redisCommand(d, "FLUSHALL");
+#ifdef DEBUG
+	log_info("FLUSHING REDIS");
+	print_reply(reply);
+#endif
+	freeReplyObject(reply);
+	return 0;
 }
