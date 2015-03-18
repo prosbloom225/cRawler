@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
 	int rc;
 	rc = connect_to_redis(NULL,0);
 	log_info("Redis connection OK!");
+	connect_to_redis2("127.0.0.1", 6380);
 
 #ifdef DEBUG
 	log_info("Building catalog page database");

@@ -19,4 +19,6 @@ int get_dbsize();
 int print_reply(redisReply *reply);
 int flushall();
 int flushall2();
+int check_exists(char *key);
+int check_exists2(char *key);
 #endif

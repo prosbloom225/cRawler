@@ -75,8 +75,9 @@ int set_key(char *key, char *value) {
 	log_info("SET: %s, %s", key, value);
 	print_reply(reply);
 #endif
+	int ret = reply->integer;
 	freeReplyObject(reply);
-	return 0;
+	return ret;
 }
 char *get_value(char *key) {
 #ifdef DEBUG
@@ -242,4 +243,29 @@ int flushall2() {
 #endif
 	freeReplyObject(reply);
 	return 0;
+}
+
+int check_exists(char *key) {
+	int ret = 0;
+	redisReply *reply;
+	reply = redisCommand(c, "EXISTS %s", key);
+#ifdef DEBUG
+	log_info("CHECKING EXISTS %s", key);
+	print_reply(reply);
+#endif
+	ret = reply->integer;
+	freeReplyObject(reply);
+	return ret;
+}
+int check_exists2(char *key) {
+	int ret = 0;
+	redisReply *reply;
+	reply = redisCommand(d, "EXISTS %s", key);
+#ifdef DEBUG
+	log_info("CHECKING EXISTS %s", key);
+	print_reply(reply);
+#endif
+	ret = reply->integer;
+	freeReplyObject(reply);
+	return ret;
 }

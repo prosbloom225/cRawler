@@ -20,6 +20,7 @@
 //#define DEBUG 1
 static regex_t catalog_regex;
 static regex_t image_regex;
+static long prdcount = 0;
 
 struct keyvalue {
 	char* key;
@@ -75,6 +76,8 @@ int getproducts(size_t size, char *data) {
 #ifdef DEBUG
 			log_info("Regex complete with %d matches", count);
 #endif
+			log_info("%lu Prds found on page", prdcount);
+			prdcount = 0;
 			return nomatch;
 		}
 		for (i=0;i < n_matches;i++) {
@@ -101,7 +104,11 @@ int getproducts(size_t size, char *data) {
 			memcpy(substring, &data[start], (finish-start));
 			// Terminate the char* as a string
 			substring[finish-start] = '\0';
-			set_key(substring, "catalog.jsp");
+			// Make sure the key doesnt already exist
+			if (!check_exists2(substring) && !check_exists(substring)) {
+			int rc = set_key(substring, "catalog.jsp");
+			prdcount++;
+			}
 #ifdef DEBUG
 			log_info("PRD: %.*s", (finish-start),data+start);
 			log_info("SENT: %s", substring);
