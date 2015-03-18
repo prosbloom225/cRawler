@@ -25,8 +25,9 @@
 #define HOST "www.kohls.com"
 #define PORT 80
 #define USERAGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115"
-#define REDIS_SERVER "127.0.0.1"
-#define REDIS_PORT 6379
+
+static char *redis_server_ip; 
+static int redis_server_port;
 
 struct keyvalue{
 	char* key;
@@ -103,12 +104,32 @@ int process_page(char* text, int size, char *url) {
 	}
 	return 0;
 }
+void print_usage() {
+	printf("cRawler worker usage: \n");
+	printf("worker redis_server_ip redis_server_port");
+	exit(EXIT_FAILURE);
+}
+void process_args(int argc, char **argv) {
+	// ./worker redis_server redis_port
+	if (argc == 3) {
+#ifdef DEBUG
+		log_info("Setting redis_server based on args");
+		for (int i = 0; i < argc; i++) 
+			log_info("%d: %s", argc, argv[i]);
+#endif
+		redis_server_ip = argv[1];
+		redis_server_port = atoi(argv[2]);
+	} else if (argc == 1) {
+		redis_server_ip = "127.0.0.1";
+		redis_server_port = 6379;
+	} else {
+		print_usage();
+	}
+}
 
 int main (int argc, char **argv) {
 	log_info("Worker initialized");
-	if (argc != 0) {
-		getpage(argv[1]);
-	}
+	process_args(argc, argv);
 	worker_loop();
 	return 0;
 }
@@ -116,7 +137,7 @@ int main (int argc, char **argv) {
 void *worker_loop() {
 	pthread_t id = pthread_self();
 	log_info("Starting worker loop for thread: %lu", (long)id);
-	connect_to_redis(NULL,0);
+	connect_to_redis(redis_server_ip,redis_server_port);
 	while (1) {
 		log_info("Working...");
 		struct keyvalue k = pop_random_key();

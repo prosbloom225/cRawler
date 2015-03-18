@@ -31,6 +31,9 @@ struct keyvalue{
 };
 
 int connect_to_redis(char *ip, int port) {
+#ifdef DEBUG
+	log_info("Opening redis connction to server: %s:%d", ip, port);
+#endif
 	if (ip == NULL)
 		ip = IP;
 	if (port == 0) 
@@ -39,6 +42,7 @@ int connect_to_redis(char *ip, int port) {
 	c = redisConnect(ip, port);
 	if (c != NULL && c->err) {
 		log_err("Error making redis connectinon: %s", c->errstr);
+		exit(EXIT_FAILURE);
 	}
 	log_info("Redis connection made!");
 	redisReply *reply;

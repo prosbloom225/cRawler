@@ -170,6 +170,11 @@ int main(int argc, char **argv) {
 
 
 	// Clean up
+	for (int i = 0; i < max_page; i++) {
+		free(catalogDB[i]);
+	}
+	free(data);
+	free(catalogDB);
 	free_regex();
 	close_redis();
 	log_info("Master complete");
