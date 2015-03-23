@@ -6,7 +6,8 @@
 #include "redisconnector.h"
 
 int getproducts(size_t size, char *data);
-int getimages(size_t size, char *data, char *url);
+int regeximages(size_t size, char *data, char *url);
+int getetag(size_t size, char *data, char *fake_eTag);
 int free_regex();
 
 #endif

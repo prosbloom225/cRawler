@@ -16,6 +16,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <curl/curl.h>
+#include <tidy/tidy.h>
+#include <tidy/buffio.h>
 #include <pthread.h>
 #include "regexlib.h"
 #include "debug.h"
@@ -23,8 +25,7 @@
 #include "crawler.h"
 
 //#define DEBUG 1
-#define HOST "www.kohls.com"
-#define PORT 80
+#define HOST "http://www.kohls.com"
 #define USERAGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115"
 
 static char *redis_server_ip; 
@@ -45,9 +46,9 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 	struct MemoryStruct *mem = (struct MemoryStruct *) userp;
 	mem->memory = realloc(mem->memory, mem->size + realsize + 1);
 	if (mem->memory ==NULL) {
-	// out of memory
-	log_err("Out of memory!");
-	return 0;
+		// out of memory
+		log_err("Out of memory!");
+		return 0;
 	}
 	memcpy(&(mem->memory[mem->size]), contents, realsize);
 	mem->size += realsize;
@@ -57,10 +58,12 @@ static size_t WriteMemoryCallback (void *contents, size_t size, size_t nmemb, vo
 }
 
 int getpage(char *url) {
-	// Build URL
-	char buf[256];
-	snprintf(buf, sizeof buf, "%s%s", HOST, url);
-	url = buf;
+	// Build URL if needed
+	if (strncmp(url, "http://", 7) != 0) {
+		char buf[256];
+		snprintf(buf, sizeof buf, "%s%s", HOST, url);
+		url = buf;
+	}
 #ifdef DEBUG
 	log_info("Curling for url: %s", url);
 #endif
@@ -100,18 +103,75 @@ int process_page(char* text, int size, char *url) {
 #ifdef DEBUG
 	log_info("Processing page: %s", url);
 #endif 
+
 	if (size == 0) {
 		text = NULL;
 	} else {
-		getimages(size, text, url);
+		getimages(url);
 	}
 	return 0;
 }
+
+void getimage (char *url) {
+	// This is an akamaized image, just snag the header
+#ifdef DEBUG
+	log_info("IMG: %s", url);
+#endif
+
+	CURL *curl_handle;
+	CURLcode res;
+	struct MemoryStruct chunk;
+	chunk.memory = malloc(1);
+	chunk.size = 0;
+	curl_global_init(CURL_GLOBAL_ALL);
+	curl_handle = curl_easy_init();
+	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+	// Get headers only
+	curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, (void *)&chunk);
+	curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
+
+	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "hurr durr im a sheep");
+	// Exec!
+	res =  curl_easy_perform(curl_handle);
+
+	if (res != CURLE_OK) {
+		log_err("curl_easy_perform failed: %s", curl_easy_strerror(res));
+	} else {
+		// We got data, process
+#ifdef DEBUG
+		log_info("Curl: %lu bytes retrieved", (long)chunk.size);
+#endif
+		int rc = getetag(chunk.size, chunk.memory, "fakeetagplaceholder");
+#ifdef DEBUG
+		if (rc == 1) {
+			log_info("Image coming soon!");
+		} else {
+			log_info("Valid image!");
+		}
+#endif 
+
+	}
+	curl_easy_cleanup(curl_handle);
+#ifdef DEBUG
+	log_info("%s", chunk.memory);
+#endif
+	if (chunk.memory)
+		free(chunk.memory);
+	curl_global_cleanup();
+#ifdef DEBUG
+	log_info("getimage complete");
+#endif
+
+	//exit(EXIT_SUCCESS);
+}
+
 void print_usage() {
 	printf("cRawler worker usage: \n");
 	printf("worker redis_server_ip redis_server_port");
 	exit(EXIT_FAILURE);
 }
+
 void process_args(int argc, char **argv) {
 	// ./worker redis_server redis_port
 	if (argc == 3) {
@@ -137,6 +197,75 @@ int main (int argc, char **argv) {
 	process_args(argc, argv);
 	worker_loop();
 	return 0;
+
+}
+
+uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
+	uint r;
+	r = size * nmemb;
+	tidyBufAppend(out, in, r);
+	return r;
+}
+
+void dumpNode(TidyDoc doc, TidyNode tnod, int indent, char *url) {
+	TidyNode child;
+	for (child = tidyGetChild(tnod);child;child = tidyGetNext(child)){
+		ctmbstr name = tidyNodeGetName(child);
+		if (name) {
+			// if it has a name its an html tag	
+			TidyAttr attr;
+			// ignore tags
+			//log_info("TAG:  %*.*s%s", indent, indent, "<", name);
+			// walk the attribute list 
+			for (attr = tidyAttrFirst(child); attr; attr = tidyAttrNext(attr)) {
+				if (strncmp(tidyAttrName(attr), "src", 3) == 0) { 
+					if(strncmp(tidyAttrValue(attr), "http://media", 12) == 0) {
+						// We have an image, push
+						tidyAttrValue(attr)?log_info("ATTR: %s =\"%s\" ",tidyAttrName(attr),
+								tidyAttrValue(attr)):log_err(" ");
+						set_key((char *)tidyAttrValue(attr), url);
+					}
+				}
+			}
+		} 
+		dumpNode(doc, child, indent + 4, url); // recursive
+	}
+}
+
+void *getimages(char *url) {
+	CURL *curl;
+	char curl_errbuf[CURL_ERROR_SIZE];
+	TidyDoc tdoc;
+	TidyBuffer docbuf = {0, NULL, 0, 0, 0};
+	TidyBuffer tidy_errbuf = {0, NULL, 0, 0, 0};
+	int err;
+	curl = curl_easy_init();
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
+	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+	curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+
+	tdoc = tidyCreate();
+	//tidyOptSetBool(tdoc, TidyWrapLen, 9999);
+	tidySetErrorBuffer(tdoc, &tidy_errbuf);
+	tidyBufInit(&docbuf);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &docbuf);
+	err = curl_easy_perform(curl);
+	if (!err) {
+		err = tidyParseBuffer(tdoc, &docbuf);
+		if (err >= 0) {
+			err = tidyCleanAndRepair(tdoc);
+			if (err >= 0) {
+				//err = tidyRunDiagnostics(tdoc);
+				if (err >= 0) {
+					dumpNode(tdoc, tidyGetRoot(tdoc), 0, url);
+					//log_err("%s", tidy_errbuf.bp);
+				}
+			}
+		}
+	}
+	return NULL;
 }
 
 void *worker_loop() {
@@ -148,20 +277,29 @@ void *worker_loop() {
 		log_info("Working...");
 		struct keyvalue k = pop_random_key();
 		if (k.key != 0) {
-		log_info("KEY: %s", k.key);
-		log_info("VAL: %s", k.value);
-		if (1) {
-			// Process page
-		getpage(k.key);
-		// We're done with the page, push to pagesVisited;
-		set_key2(k.key, k.value);
-		} else {
-			// Process images
-		}
+			log_info("KEY: %s", k.key);
+			log_info("VAL: %s", k.value);
+			if (1) {
+				/* Process the page
+				 *  if it's an image break out and process_image
+				 *  else process_page
+				 */
+				if (strncmp(k.key, "http://media", 12) == 0) {
+					// image
+					getimage(k.key);
+				} else {
+					// page
+					getpage(k.key);
+				}
+				// We're done with the page, push to pagesVisited;
+				set_key2(k.key, k.value);
+			} else {
+				// Process images
+			}
 		} else {
 			log_info("NO KEY RETURNED");
 		}
-		
+
 		// TODO - Remove this sleep, the processing of the page and http wait time should be enough sleep
 		sleep(1);
 		//break;

@@ -19,6 +19,7 @@
 
 //#define DEBUG 1
 static regex_t catalog_regex;
+static regex_t etag_regex;
 static regex_t image_regex;
 static long prdcount = 0;
 
@@ -47,7 +48,6 @@ void free_regex() {
 }
 
 int getproducts(size_t size, char *data) {
-	//regex_t regex;
 	int reti;
 	char msg[256];
 
@@ -61,8 +61,8 @@ int getproducts(size_t size, char *data) {
 
 	char *regex_text= "/product/prd-.*\\.jsp";
 	if (catalog_regex.__allocated == 0) {
-	log_info("Compiling regex: %s", regex_text);
-	compile_regex(&catalog_regex, regex_text);
+		log_info("Compiling regex: %s", regex_text);
+		compile_regex(&catalog_regex, regex_text);
 	}
 
 	const char *p = data;
@@ -104,10 +104,19 @@ int getproducts(size_t size, char *data) {
 			memcpy(substring, &data[start], (finish-start));
 			// Terminate the char* as a string
 			substring[finish-start] = '\0';
+
+			// Build the url
+			// if (substring.beginsWith("http://")  // url-ify
+			char buf[finish-start+21];
+			snprintf(buf, sizeof(buf), "%s%s", "http://www.kohls.com", substring);
+#ifdef DEBUG
+			log_info("URLIFIED: %s", buf);
+#endif
+
 			// Make sure the key doesnt already exist
-			if (!check_exists2(substring) && !check_exists(substring)) {
-			int rc = set_key(substring, "catalog.jsp");
-			prdcount++;
+			if (!check_exists2(buf) && !check_exists(buf)) {
+				int rc = set_key(buf, "catalog.jsp");
+				prdcount++;
 			}
 #ifdef DEBUG
 			log_info("PRD: %.*s", (finish-start),data+start);
@@ -120,7 +129,7 @@ int getproducts(size_t size, char *data) {
 }
 
 
-int getimages(size_t size, char *data, char *url) {
+int regeximages(size_t size, char *data, char *url) {
 #ifdef DEBUG
 	log_info("getimages begin");
 #endif
@@ -137,12 +146,13 @@ int getimages(size_t size, char *data, char *url) {
 #endif
 
 	//char *regex_text= "/product/prd-.*\\.jsp";
-	char *regex_text= "http://media[0-9]?\\.kohls\\.com\\.edgesuite\\.net(.*)&op_sharpen=1";
+	//char *regex_text= "http://media[0-9]?\\.kohls\\.com\\.edgesuite\\.net(.*)\"";
+	char *regex_text= "img src\\s*=\\s*(.+?)\"";
 	if (image_regex.__allocated == 0) {
 #ifdef DEBUG
-	log_info("Compiling regex: %s", regex_text);
+		log_info("Compiling regex: %s", regex_text);
 #endif
-	compile_regex(&image_regex, regex_text);
+		compile_regex(&image_regex, regex_text);
 	}
 
 	const char *p = data;
@@ -183,14 +193,81 @@ int getimages(size_t size, char *data, char *url) {
 			// Terminate the char* as a string
 			substring[finish-start] = '\0';
 			// Push the data to pagesToVisit
-			//set_key2(substring, url);
+			set_key(substring, url);
 #ifdef DEBUG
-			log_info("PRD: %.*s", (finish-start),data+start);
-			log_info("SENT: %s", substring);
+			//log_info("PRD: %.*s", (finish-start),data+start);
+			//log_info("SENT: %s", substring);
 			log_info("URL: %s", url);
 #endif
 		}
 		p += m[0].rm_eo;
 	}
 	return 0;
+}
+
+
+int getetag(size_t size, char *data, char *fake_eTag) {
+	//Check the etag of the image against fake_eTag
+
+	int reti;
+	char msg[256];
+
+	if (size <=0) {
+		log_err("Please pass a valid sized data");
+		return -1;
+	}
+#ifdef DEBUG
+	log_info("Size of data: %lu", (long)size);
+#endif
+
+	char *regex_text= "ETag:\\s*\"[0-9a-z]+\"";
+	if (etag_regex.__allocated == 0) {
+		log_info("Compiling regex: %s", regex_text);
+		compile_regex(&etag_regex, regex_text);
+	}
+
+	const char *p = data;
+	const int n_matches = 256;
+	regmatch_t m[n_matches];
+	while (1) {
+		int i=0;
+		int nomatch = regexec(&etag_regex, p, n_matches, m, 0);
+		if (nomatch) {
+#ifdef DEBUG
+			log_info("Regex complete");
+#endif
+			log_info("%lu ETags found on page", prdcount);
+			return nomatch;
+		}
+		int start;
+		int finish;
+		if (m[0].rm_so == -1) {
+			break;
+		}
+		start = m[0].rm_so + (p-data);
+		finish = m[0].rm_eo + (p-data);
+		char substring[finish-start];
+		memcpy(substring, &data[start], (finish-start));
+		// Terminate the char* as a string
+		substring[finish-start] = '\0';
+		char buf[finish-(start+7)];
+		snprintf(buf, sizeof(buf), "%.*s", 32,substring + 7 );
+#ifdef DEBUG
+		log_err("%s : %s", buf, fake_eTag);
+#endif
+		if (strcmp(buf, fake_eTag) == 0) {
+			// Image is coming soon
+			return 1;
+		} else {
+			// Image is real
+			return 0;
+		}
+		log_info("%s", buf);
+#ifdef DEBUG
+		log_info("ETAG: %s", buf);
+#endif
+		p += m[0].rm_eo;
+	}
+	// fail return
+	return -1;
 }
