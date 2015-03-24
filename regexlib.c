@@ -206,15 +206,15 @@ int regeximages(size_t size, char *data, char *url) {
 }
 
 
-int getetag(size_t size, char *data, char *fake_eTag) {
-	//Check the etag of the image against fake_eTag
+char *getetag(size_t size, char *data) {
+	//Pull the etag out of data
 
 	int reti;
 	char msg[256];
 
 	if (size <=0) {
 		log_err("Please pass a valid sized data");
-		return -1;
+		return "";
 	}
 #ifdef DEBUG
 	log_info("Size of data: %lu", (long)size);
@@ -237,7 +237,7 @@ int getetag(size_t size, char *data, char *fake_eTag) {
 			log_info("Regex complete");
 #endif
 			log_info("%lu ETags found on page", prdcount);
-			return nomatch;
+			return "";
 		}
 		int start;
 		int finish;
@@ -255,19 +255,15 @@ int getetag(size_t size, char *data, char *fake_eTag) {
 #ifdef DEBUG
 		log_err("%s : %s", buf, fake_eTag);
 #endif
-		if (strcmp(buf, fake_eTag) == 0) {
-			// Image is coming soon
-			return 1;
-		} else {
-			// Image is real
-			return 0;
-		}
 		log_info("%s", buf);
 #ifdef DEBUG
 		log_info("ETAG: %s", buf);
 #endif
+		char *ret = malloc(finish-(start+7));
+		memcpy(ret, buf, finish-(start+7));
+		return ret;
 		p += m[0].rm_eo;
 	}
 	// fail return
-	return -1;
+	return "";
 }

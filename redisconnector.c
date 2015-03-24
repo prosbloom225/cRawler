@@ -219,8 +219,9 @@ int set_key2(char *key, char *value) {
 	log_info("SET: %s, %s", key, value);
 	print_reply(reply);
 #endif
+	int ret = reply->integer;
 	freeReplyObject(reply);
-	return 0;
+	return ret;
 }
 
 int flushall() {
@@ -257,6 +258,7 @@ int check_exists(char *key) {
 	freeReplyObject(reply);
 	return ret;
 }
+
 int check_exists2(char *key) {
 	int ret = 0;
 	redisReply *reply;

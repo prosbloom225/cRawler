@@ -7,7 +7,7 @@
 
 int getproducts(size_t size, char *data);
 int regeximages(size_t size, char *data, char *url);
-int getetag(size_t size, char *data, char *fake_eTag);
+char *getetag(size_t size, char *data);
 int free_regex();
 
 #endif
