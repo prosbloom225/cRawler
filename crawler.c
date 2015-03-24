@@ -186,11 +186,11 @@ char *get_fake_etag(int x, int y) {
 		if (chunk.memory)
 			free(chunk.memory);
 		curl_global_cleanup();
-#ifdef DEBUG
 		char *ret = getetag(chunk.size, chunk.memory);
+#ifdef DEBUG
 		log_info("etag received %s", ret);
-		return ret;
 #endif
+		return ret;
 	}
 
 void build_fake_etags() {
