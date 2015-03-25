@@ -98,7 +98,9 @@ int getpage(char *url) {
 	if (chunk.memory)
 		free(chunk.memory);
 	curl_global_cleanup();
+#ifdef DEBUG
 	log_info("getpage complete");
+#endif
 	return 0;
 }
 
@@ -135,18 +137,26 @@ char *get_fake_etag(int x, int y) {
 		char xbuf[20];
 		sprintf(xbuf, "%d", x);
 		size_t xsiz = strlen(xbuf);
+#ifdef DEBUG
 		log_info("%lu", xsiz);
+#endif
 		char xwid[6 + xsiz];// = "?wid=";
 		snprintf(xwid, sizeof(xwid), "%s%s", "?wid=", xbuf);
+#ifdef DEBUG
 		log_info("WID: %s", xwid);
+#endif
 		// y
 		char ybuf[20];
 		sprintf(ybuf, "%d", y);
 		size_t ysiz = strlen(ybuf);
+#ifdef DEBUG
 		log_info("%lu", ysiz);
+#endif
 		char yhei[6 + ysiz];// = "&hei=";
 		snprintf(yhei, sizeof(yhei), "%s%s", "&hei=", ybuf);
+#ifdef DEBUG
 		log_info("HEI: %s", yhei);
+#endif
 		// now kiss
 		char buf[65 + 6+xsiz + 6+ysiz];
 		snprintf(buf, sizeof buf, "%s%s%s",FAKEETAGADDRESS, xwid, yhei);
@@ -246,9 +256,11 @@ void build_fake_etags() {
 				log_info("Image coming soon!");
 				log_info("ETAG: %s", etag);
 				log_info("URL: %s", url);
-				exit(EXIT_SUCCESS);
+				/* exit(EXIT_SUCCESS); */
 			} else {
+#ifdef DEBUG
 				log_info("Valid image!");
+#endif
 			}
 			free(etag);
 
@@ -326,8 +338,10 @@ void build_fake_etags() {
 					if (strncmp(tidyAttrName(attr), "src", 3) == 0) { 
 						if(strncmp(tidyAttrValue(attr), "http://media", 12) == 0) {
 							// We have an image, push
+#ifdef DEBUG
 							tidyAttrValue(attr)?log_info("ATTR: %s =\"%s\" ",tidyAttrName(attr),
 									tidyAttrValue(attr)):log_err(" ");
+#endif
 							set_key((char *)tidyAttrValue(attr), url);
 						}
 					}
@@ -380,16 +394,22 @@ void build_fake_etags() {
 
 	void *worker_loop() {
 		pthread_t id = pthread_self();
+#ifdef DEBUG
 		log_info("Starting worker loop for thread: %lu", (long)id);
+#endif
 		connect_to_redis(redis_server_ip,redis_server_port);
 		connect_to_redis2(redis_server_ip,redis_server_port+1);
 		int cycles = 0;
 		while (1) {
+#ifdef DEBUG
 			log_info("Working...");
+#endif
 			struct keyvalue k = pop_random_key();
 			if (k.key != 0) {
+#ifdef DEBUG
 				log_info("KEY: %s", k.key);
 				log_info("VAL: %s", k.value);
+#endif
 				if (1) {
 					/* Process the page
 					 *  if it's an image break out and process_image
@@ -416,8 +436,8 @@ void build_fake_etags() {
 			// TODO - Remove this sleep, the processing of the page and http wait time should be enough sleep
 			sleep(1);
 			// testing
-			if (cycles++ >=50)
-				break;
+			/* if (cycles++ >=50) */
+			/* 	break; */
 		}
 #ifdef DEBUG
 		log_info("Worker complete.  Closing up shop.");

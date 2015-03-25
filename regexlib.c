@@ -222,7 +222,9 @@ char *getetag(size_t size, char *data) {
 
 	char *regex_text= "ETag:\\s*\"[0-9a-z]+\"";
 	if (etag_regex.__allocated == 0) {
+#ifdef DEBUG
 		log_info("Compiling regex: %s", regex_text);
+#endif
 		compile_regex(&etag_regex, regex_text);
 	}
 
@@ -255,7 +257,6 @@ char *getetag(size_t size, char *data) {
 #ifdef DEBUG
 		log_err("%s : %s", buf, fake_eTag);
 #endif
-		log_info("%s", buf);
 #ifdef DEBUG
 		log_info("ETAG: %s", buf);
 #endif
