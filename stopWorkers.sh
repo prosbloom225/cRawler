@@ -1,1 +1,1 @@
-sudo killall worker
+killall worker

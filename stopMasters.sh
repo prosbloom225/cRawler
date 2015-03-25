@@ -1,1 +1,1 @@
-sudo killall master
+killall master
