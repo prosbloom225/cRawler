@@ -257,7 +257,7 @@ void build_fake_etags() {
 			int rc =  check_etag(etag);;
 			if (rc == 1) {
 				log_info("Image coming soon!");
-				log_info("ETAG: %s", etag);
+				//log_info("ETAG: %s", etag);
 				log_info("URL: %s", url);
 				/* exit(EXIT_SUCCESS); */
 			} else {
@@ -265,7 +265,8 @@ void build_fake_etags() {
 				log_info("Valid image!");
 #endif
 			}
-			free(etag);
+			if (etag)
+				free(etag);
 
 		}
 		curl_easy_cleanup(curl_handle);
