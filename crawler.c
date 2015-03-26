@@ -434,7 +434,7 @@ void build_fake_etags() {
 			}
 
 			// TODO - Remove this sleep, the processing of the page and http wait time should be enough sleep
-			sleep(1);
+			//sleep(1);
 			// testing
 			/* if (cycles++ >=50) */
 			/* 	break; */
