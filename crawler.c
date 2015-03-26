@@ -100,7 +100,7 @@ int getpage(char *url) {
 	curl_easy_cleanup(curl_handle);
 	if (chunk.memory)
 		free(chunk.memory);
-	curl_global_cleanup();
+	//curl_global_cleanup();
 #ifdef DEBUG
 	log_info("getpage complete");
 #endif
@@ -198,7 +198,7 @@ char *get_fake_etag(int x, int y) {
 #endif
 		if (chunk.memory)
 			free(chunk.memory);
-		curl_global_cleanup();
+		//curl_global_cleanup();
 		char *ret = getetag(chunk.size, chunk.memory);
 #ifdef DEBUG
 		log_info("etag received %s", ret);
@@ -270,13 +270,13 @@ void build_fake_etags() {
 
 		}
 		curl_easy_cleanup(curl_handle);
-		curl_global_cleanup();
+		//curl_global_cleanup();
 #ifdef DEBUG
 		log_info("%s", chunk.memory);
 #endif
 		if (chunk.memory)
 			free(chunk.memory);
-		curl_global_cleanup();
+		//curl_global_cleanup();
 #ifdef DEBUG
 		log_info("getimage complete");
 #endif
@@ -402,7 +402,7 @@ void handler(int sig) {
 			}
 		}
 		curl_easy_cleanup(curl);
-		curl_global_cleanup();
+		//curl_global_cleanup();
 		tidyBufFree(&docbuf);
 		tidyBufFree(&tidy_errbuf);
 		tidyRelease(tdoc);
@@ -456,9 +456,9 @@ void handler(int sig) {
 			if (cycles++ >=50)
 				break;
 		}
-#ifdef DEBUG
+		// At least make a log entry of some sort...
 		log_info("Worker complete.  Closing up shop.");
-#endif
 		close_redis();
+		curl_global_cleanup();
 		return NULL;
 	}
