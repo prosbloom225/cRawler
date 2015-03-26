@@ -24,6 +24,9 @@
 #include "redisconnector.h"
 #include "crawler.h"
 
+#include <signal.h>
+#include <execinfo.h>
+
 //#define DEBUG 1
 #define HOST "http://www.kohls.com"
 //#define USERAGENT "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115"
@@ -266,6 +269,7 @@ void build_fake_etags() {
 
 		}
 		curl_easy_cleanup(curl_handle);
+		curl_global_cleanup();
 #ifdef DEBUG
 		log_info("%s", chunk.memory);
 #endif
@@ -303,7 +307,19 @@ void build_fake_etags() {
 		}
 	}
 
+void handler(int sig) {
+	void *array[10];
+	size_t size;
+	size = backtrace(array, 10);
+	fprintf(stderr, "Error: signal %d:\n", sig);
+	backtrace_symbols_fd(array, size, STDERR_FILENO);
+	exit(1);
+}
+
 	int main (int argc, char **argv) {
+		// Dump stack on fault
+		signal(SIGSEGV, handler);
+
 		build_fake_etags();
 		//testing
 		//exit(EXIT_SUCCESS);
@@ -436,8 +452,8 @@ void build_fake_etags() {
 			// TODO - Remove this sleep, the processing of the page and http wait time should be enough sleep
 			sleep(1);
 			// testing
-			/* if (cycles++ >=50) */
-			/* 	break; */
+			if (cycles++ >=50)
+				break;
 		}
 #ifdef DEBUG
 		log_info("Worker complete.  Closing up shop.");
