@@ -27,9 +27,10 @@
 
 
 
-//#define DEBUG 1
+#define DEBUG 1
 #define URL "www.kohls.com/catalog.jsp?N=0&WS="
 #define MAXPRDPAGES 200000
+#define PRDPERPAGE 96
 
 
 static int min_page=0;
@@ -94,20 +95,21 @@ int main(int argc, char **argv) {
 #endif
 	char *data = malloc(sizeof(*data) * 255 ); 
 	char **catalogDB = malloc(sizeof(char *) * max_page);
-	for (int i = 0;i < max_page; ++i) {
+	for (int i = 0;i < max_page; i++) {
 		catalogDB[i] = malloc(sizeof(char *) * 255);
 	}
 
 	long i;
 	// build database of catalog0 pages
-	for (i=0;i < (max_page/96); i++){
-		long s = i*96 + (min_page - min_page%96);
+	for (i=0;i < ((max_page-min_page)/PRDPERPAGE); i++){
+		long s = i*PRDPERPAGE + (min_page - min_page%PRDPERPAGE);
 		char  c[40];
 		sprintf(c, "%lu", s);
 
 		char currPage[80];
 		snprintf(currPage, sizeof currPage, "%s%s" , URL, c);
 		memcpy(catalogDB[i], currPage, sizeof(currPage));
+		//log_info("%d: %lu", i, s);
 	}
 #ifdef DEBUG
 		log_info("CatalogDB built! %lu pages queued",  i);
@@ -117,7 +119,7 @@ int main(int argc, char **argv) {
 
 	// // BEGIN THE MAIN LOOP
 
-	for (int i=0;i < (max_page/96); i++){
+	for (int i=0;i < (max_page/PRDPERPAGE); i++){
 		log_info("Beginning curl for: %s", catalogDB[i]);
 
 		// curl the page

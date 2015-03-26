@@ -15,7 +15,8 @@ module.exports = function(grunt) {
 				command: 'make clean',
 			},
 			execute: {
-				command: './worker 127.0.0.1 6379',
+				// command: './worker 127.0.0.1 6379',
+				command: './master 40000 60000',
 			},
 			test: {
 				command: 'echo "TEST COMPLETE"',
