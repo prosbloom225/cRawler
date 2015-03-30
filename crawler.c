@@ -325,9 +325,7 @@ void handler(int sig) {
 		//testing
 		//exit(EXIT_SUCCESS);
 
-#ifdef DEBUG
 		log_info("Worker initialized");
-#endif
 		process_args(argc, argv);
 		worker_loop();
 		return 0;
