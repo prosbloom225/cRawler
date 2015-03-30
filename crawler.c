@@ -453,8 +453,8 @@ void handler(int sig) {
 			// TODO - Remove this sleep, the processing of the page and http wait time should be enough sleep
 			//sleep(1);
 			// testing
-			if (cycles++ >=50)
-				break;
+			/* if (cycles++ >=50) */
+			/* 	break; */
 		}
 		// At least make a log entry of some sort...
 		log_info("Worker complete.  Closing up shop.");
