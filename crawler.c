@@ -439,17 +439,15 @@ void handler(int sig) {
 					}
 					// We're done with the page, push to pagesVisited;
 					set_key2(k.key, k.value);
-					free(k.key);
-					free(k.value);
 				} else {
 					// Process images
 				}
 			} else {
 				log_info("NO KEY RETURNED");
 			}
+			free(k.key);
+			free(k.value);
 
-			// TODO - Remove this sleep, the processing of the page and http wait time should be enough sleep
-			//sleep(1);
 			// testing
 			/* if (cycles++ >=50) */
 			/* 	break; */
