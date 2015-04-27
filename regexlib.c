@@ -212,7 +212,7 @@ char *getetag(size_t size, char *data) {
 	int reti;
 	char msg[256];
 
-	if (size <=0) {
+	if (size <=0 ) {
 		log_err("Please pass a valid sized data");
 		return "";
 	}

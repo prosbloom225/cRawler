@@ -196,10 +196,9 @@ char *get_fake_etag(int x, int y) {
 #ifdef DEBUG
 		log_info("%s", chunk.memory);
 #endif
+		char *ret = getetag(chunk.size, chunk.memory);
 		if (chunk.memory)
 			free(chunk.memory);
-		//curl_global_cleanup();
-		char *ret = getetag(chunk.size, chunk.memory);
 #ifdef DEBUG
 		log_info("etag received %s", ret);
 #endif
@@ -449,7 +448,7 @@ void handler(int sig) {
 			free(k.value);
 
 			// testing
-			/* if (cycles++ >=50) */
+			/* if (cycles++ >=5) */
 			/* 	break; */
 		}
 		// At least make a log entry of some sort...
