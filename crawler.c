@@ -327,6 +327,7 @@ void handler(int sig) {
 		log_info("Worker initialized");
 		process_args(argc, argv);
 		worker_loop();
+		log_err("I'm done");
 		return 0;
 
 	}
@@ -442,14 +443,17 @@ void handler(int sig) {
 					// Process images
 				}
 			} else {
+#ifdef DEBUG
 				log_info("NO KEY RETURNED");
+#endif 
+				sleep(1);
 			}
 			free(k.key);
 			free(k.value);
 
 			// testing
-			/* if (cycles++ >=5) */
-			/* 	break; */
+			if (cycles++ >=50)
+				break;
 		}
 		// At least make a log entry of some sort...
 		log_info("Worker complete.  Closing up shop.");

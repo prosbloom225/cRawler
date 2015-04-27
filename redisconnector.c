@@ -177,7 +177,9 @@ struct keyvalue pop_random_key() {
 	if (ret.key != 0) {
 		del_key(ret.key);
 	}  else {
+#ifdef DEBUG
 		log_info("Returning NULL keyvale");
+#endif
 		ret.key = 0;
 		ret.value = 0;
 	}
