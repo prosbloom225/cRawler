@@ -197,8 +197,9 @@ char *get_fake_etag(int x, int y) {
 		log_info("%s", chunk.memory);
 #endif
 		char *ret = getetag(chunk.size, chunk.memory);
-		if (chunk.memory)
+		if (chunk.memory) {
 			free(chunk.memory);
+		}
 #ifdef DEBUG
 		log_info("etag received %s", ret);
 #endif
@@ -264,8 +265,9 @@ void build_fake_etags() {
 				log_info("Valid image!");
 #endif
 			}
-			if (etag)
+			if (etag) {
 				free(etag);
+			}
 
 		}
 		curl_easy_cleanup(curl_handle);
@@ -273,8 +275,9 @@ void build_fake_etags() {
 #ifdef DEBUG
 		log_info("%s", chunk.memory);
 #endif
-		if (chunk.memory)
+		if (chunk.memory) {
 			free(chunk.memory);
+		}
 		//curl_global_cleanup();
 #ifdef DEBUG
 		log_info("getimage complete");
@@ -448,8 +451,8 @@ void handler(int sig) {
 #endif 
 				sleep(1);
 			}
-			free(k.key);
-			free(k.value);
+			//free(k.key);
+			//free(k.value);
 
 			// testing
 			/* if (cycles++ >=50) */
