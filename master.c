@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 		log_info("DB Size: %i", s);
 		
 		// Wait until we have less data, then cycle back
-		while (s >= 960){
+		while (s >= 1920){
 			//sleep(1);
 			nanosleep(&sleep_time, NULL);
 			s = get_dbsize();
