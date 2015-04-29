@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-I. -Wall  -std=c11 -D_BSD_SOURCE -Wno-unused-variable -g -lcurl -lhiredis -lpthread -ltidy -rdynamic -pg -fprofile-arcs -ftest-coverage -pg
+CFLAGS=-I. -Wall  -std=c11 -D_BSD_SOURCE -Wno-unused-variable -g -lcurl -lhiredis -lpthread -ltidy -O2 #-rdynamic -pg -fprofile-arcs -ftest-coverage -pg
 DEPS = regexlib.h redisconnector.h slavedriver.h 
 OBJ = master.o regexlib.o redisconnector.o slavedriver.o  
 
